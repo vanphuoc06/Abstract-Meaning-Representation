@@ -1,2 +1,4 @@
-# Dự án về việc so sánh đồ thị ngữ nghĩa AMR .Cải tiến một số bất cập của paper trước đó.
- Hiện dự án đang được phát triển bởi nhóm chúng tôi
+# Dự án về nghiên cứu về việc so sánh (AMR - Abstract Meaning Representation) Biểu diễn Ý nghĩa Trừu tượng .Cải tiến một số bất cập của paper trước đó.
+AMR là một cấu trúc đồ thị có hướng được sử dụng để biểu diễn rõ ràng ý nghĩa của một câu trong ngôn ngữ tự nhiên dựa trên điều kiện đúng (truth-conditional semantics)
+. AMR giúp máy tính hiểu được ý nghĩa logic của câu, bất kể cấu trúc từ vựng bề mặt ra sao, và thường được ứng dụng trong dịch máy, tóm tắt, hoặc phân tích câu hỏ
+ Hiện dự án vẫn đang được phát triển bởi nhóm chúng tôi

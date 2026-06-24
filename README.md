@@ -12,37 +12,37 @@ Dưới đây là sơ đồ tổng quan về kiến trúc của dự án, mô t�
 
 ```mermaid
 graph TD
-    subgraph Data Preparation
-        A1[AMR 2.0/3.0 Dataset] --> B1(concat_dataset.py)
-        A2[AMR 3.0 Train Split] --> B2(create_robustness_data.py)
-        B1 --> C1[AMR Test Files]
-        B2 --> C2[Robustness Data]
+    subgraph DataPrep [Data Preparation]
+        A1[(AMR 2.0/3.0 Dataset)] --> B1[[concat_dataset.py]]
+        A2[(AMR 3.0 Train Split)] --> B2[[create_robustness_data.py]]
+        B1 --> C1[(AMR Test Files)]
+        B2 --> C2[(Robustness Data)]
     end
 
-    subgraph Metrics Engine
-        M1[rose.py] 
-        M2[rose_stdin.py]
-        M3[SEMCAT / RoSE Module]
+    subgraph Metrics [Metrics Engine]
+        M1[[rose.py]] 
+        M2[[rose_stdin.py]]
+        M3{{SEMCAT / RoSE Module}}
         M1 --> M3
         M2 --> M3
     end
 
-    subgraph Experiment Pipeline
-        E1(prepare_other_metrics.sh) --> E2[Other Metrics Downloaded]
-        C1 --> E3(run_all_metric.py)
-        C2 --> E3
-        E2 --> E3
-        E3 --> E4[Evaluation Results]
+    subgraph Experiment [Experiment Pipeline]
+        E1[[prepare_other_metrics.sh]] --> E2[(Other Metrics)]
+        E3[[run_all_metric.py]]
+        E3 --> E4[/Evaluation Results/]
     end
     
-    Data Preparation -.-> Experiment Pipeline
-    Metrics Engine -.-> Experiment Pipeline
+    C1 -.->|Input Data| E3
+    C2 -.->|Input Data| E3
+    E2 -.->|Metrics Baseline| E3
+    M3 -.->|Imported Module| E3
     
-    classDef file fill:#f9f,stroke:#333,stroke-width:2px;
-    classDef data fill:#bbf,stroke:#333,stroke-width:2px;
-    classDef module fill:#bfb,stroke:#333,stroke-width:2px;
+    classDef script fill:#f9f2f4,stroke:#d98cb3,stroke-width:2px,color:#333,rx:5px,ry:5px;
+    classDef data fill:#e6f3ff,stroke:#8cb3d9,stroke-width:2px,color:#333;
+    classDef module fill:#e6ffe6,stroke:#8cd98c,stroke-width:2px,color:#333;
     
-    class B1,B2,E1,E3,M1,M2 file;
+    class B1,B2,E1,E3,M1,M2 script;
     class A1,A2,C1,C2,E2,E4 data;
     class M3 module;
 ```

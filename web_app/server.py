@@ -241,6 +241,11 @@ def evaluate_batch(req: BatchEvaluateRequest):
 
 # Serve Frontend static files
 STATIC_DIR = os.path.join(CURRENT_DIR, "static")
+if not os.path.exists(STATIC_DIR) or not os.listdir(STATIC_DIR):
+    PUBLIC_DIR = os.path.join(PROJECT_ROOT, "public")
+    if os.path.exists(PUBLIC_DIR):
+        STATIC_DIR = PUBLIC_DIR
+
 os.makedirs(STATIC_DIR, exist_ok=True)
 app.mount("/", StaticFiles(directory=STATIC_DIR, html=True), name="static")
 

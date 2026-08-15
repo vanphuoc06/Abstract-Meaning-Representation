@@ -12,6 +12,14 @@
       "dest": "api/index.py"
     },
     {
+      "src": "/docs",
+      "dest": "api/index.py"
+    },
+    {
+      "src": "/openapi.json",
+      "dest": "api/index.py"
+    },
+    {
       "src": "/(.*)",
       "dest": "/web_app/static/$1"
     }

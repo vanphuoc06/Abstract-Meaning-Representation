@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEMCAT / RoSE - AMR Semantic Similarity Evaluator</title>
+    <meta name="description" content="Giao diện Web UI đánh giá độ tương đồng đồ thị ngữ nghĩa AMR (Abstract Meaning Representation) dựa trên thuật toán RoSE & SEMCAT">
+    
+    <!-- Google Fonts: Inter & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- CSS Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="main-header">
+            <div class="header-left">
+                <div class="logo-badge">
+                    <i data-lucide="network"></i>
+                </div>
+                <div>
+                    <h1>SEMCAT / RoSE <span class="badge-v1">v1.0</span></h1>
+                    <p class="subtitle">AMR Truth-Conditional Semantic Evaluation Metric</p>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="status-indicator online" id="apiStatus">
+                    <span class="dot"></span> API Server Active
+                </div>
+                <a href="/docs" target="_blank" class="btn btn-secondary btn-sm" id="swaggerLink">
+                    <i data-lucide="file-code"></i> API Docs (Swagger)
+                </a>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="nav-tabs">
+            <button class="nav-btn active" data-tab="single-eval">
+                <i data-lucide="sliders"></i> Đánh Giá Đơn (Single Evaluation)
+            </button>
+            <button class="nav-btn" data-tab="batch-eval">
+                <i data-lucide="layers"></i> Đánh Giá Hàng Loạt (Batch CSV)
+            </button>
+            <button class="nav-btn" data-tab="paper-info">
+                <i data-lucide="book-open"></i> Giới Thuyết Lý Thuyết (Paper Specs)
+            </button>
+        </nav>
+
+        <!-- MAIN TAB 1: Single Evaluation -->
+        <main class="tab-content active" id="single-eval">
+            <!-- Preset Examples Section -->
+            <section class="examples-section">
+                <div class="section-title">
+                    <i data-lucide="zap"></i>
+                    <span>Thử nghiệm nhanh 1-Click (Preset Examples)</span>
+                </div>
+                <div class="examples-grid" id="examplesContainer">
+                    <!-- Loaded dynamically from API -->
+                    <div class="skeleton-card"></div>
+                    <div class="skeleton-card"></div>
+                    <div class="skeleton-card"></div>
+                </div>
+            </section>
+
+            <!-- Dual Editor Grid -->
+            <div class="editor-grid">
+                <!-- Reference AMR Card -->
+                <div class="card editor-card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <i data-lucide="file-check" class="icon-ref"></i>
+                            <span>1. Reference AMR (Đồ thị gốc)</span>
+                        </div>
+                        <div class="card-actions">
+                            <button class="btn-icon" id="btnClearRef" title="Xóa nội dung"><i data-lucide="trash-2"></i></button>
+                            <button class="btn-icon" id="btnCopyRef" title="Sao chép"><i data-lucide="copy"></i></button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <textarea id="refInput" placeholder="Nhập chuỗi Reference AMR (PENMAN notation)...
+Ví dụ:
+(c / chase-01
+   :ARG0 (d / dog)
+   :ARG1 (ct / cat))"></textarea>
+                    </div>
+                    <div class="card-footer">
+                        <span class="syntax-status" id="refSyntaxStatus"><i data-lucide="info"></i> Sẵn sàng</span>
+                        <span class="char-count" id="refCharCount">0 chars</span>
+                    </div>
+                </div>
+
+                <!-- Hypothesis AMR Card -->
+                <div class="card editor-card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <i data-lucide="git-compare" class="icon-hyp"></i>
+                            <span>2. Hypothesis AMR (Đồ thị cần so sánh)</span>
+                        </div>
+                        <div class="card-actions">
+                            <button class="btn-icon" id="btnClearHyp" title="Xóa nội dung"><i data-lucide="trash-2"></i></button>
+                            <button class="btn-icon" id="btnCopyHyp" title="Sao chép"><i data-lucide="copy"></i></button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <textarea id="hypInput" placeholder="Nhập chuỗi Hypothesis AMR (PENMAN notation)...
+Ví dụ:
+(c / chase-01
+   :ARG0 (ct / cat)
+   :ARG1 (d / dog))"></textarea>
+                    </div>
+                    <div class="card-footer">
+                        <span class="syntax-status" id="hypSyntaxStatus"><i data-lucide="info"></i> Sẵn sàng</span>
+                        <span class="char-count" id="hypCharCount">0 chars</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hyperparameters & Run Action Bar -->
+            <div class="card params-card">
+                <div class="params-group">
+                    <div class="param-item">
+                        <label for="nIterSlider">
+                            Số vòng lặp WL ($N$): <strong id="nIterValue" class="param-val">3</strong>
+                        </label>
+                        <input type="range" id="nIterSlider" min="2" max="10" step="1" value="3">
+                        <span class="param-desc">Weisfeiler-Leman Subgraph Hashing depth</span>
+                    </div>
+                    <div class="param-item">
+                        <label for="tauSlider">
+                            Ngưỡng tương đồng ($\tau$): <strong id="tauValue" class="param-val">0.99</strong>
+                        </label>
+                        <input type="range" id="tauSlider" min="0.50" max="0.99" step="0.01" value="0.99">
+                        <span class="param-desc">Similarity threshold tau</span>
+                    </div>
+                </div>
+                <div class="action-group">
+                    <button class="btn btn-primary btn-lg" id="btnEvaluate">
+                        <i data-lucide="play"></i> Tính Toán Độ Tương Đồng
+                    </button>
+                </div>
+            </div>
+
+            <!-- Evaluation Results Display Section -->
+            <section class="results-section hidden" id="resultsSection">
+                <div class="card result-card">
+                    <div class="result-grid">
+                        <!-- Score Radial Gauge -->
+                        <div class="gauge-column">
+                            <div class="gauge-wrapper">
+                                <svg class="gauge-svg" viewBox="0 0 200 200">
+                                    <circle class="gauge-bg" cx="100" cy="100" r="85"></circle>
+                                    <circle class="gauge-progress" id="gaugeProgress" cx="100" cy="100" r="85"></circle>
+                                </svg>
+                                <div class="gauge-center">
+                                    <span class="gauge-score" id="scoreDisplay">0.0000</span>
+                                    <span class="gauge-percent" id="scorePercent">0%</span>
+                                </div>
+                            </div>
+                            <div class="verdict-badge" id="verdictBadge">
+                                <span id="verdictText">Chưa có kết quả</span>
+                            </div>
+                        </div>
+
+                        <!-- Details & Stats Breakdown -->
+                        <div class="details-column">
+                            <h3 class="details-title">
+                                <i data-lucide="bar-chart-2"></i> Chi Tiết Phân Tích Đồ Thị & Điểm Số
+                            </h3>
+                            <div class="stats-cards-grid">
+                                <div class="mini-stat-card">
+                                    <span class="stat-label">Metric Evaluator</span>
+                                    <strong class="stat-val" id="metricNameVal">RoSE3</strong>
+                                </div>
+                                <div class="mini-stat-card">
+                                    <span class="stat-label">Thời gian tính toán</span>
+                                    <strong class="stat-val text-cyan" id="elapsedTimeVal">0.0 ms</strong>
+                                </div>
+                                <div class="mini-stat-card">
+                                    <span class="stat-label">Reference Nodes</span>
+                                    <strong class="stat-val" id="refNodesVal">0 concepts</strong>
+                                </div>
+                                <div class="mini-stat-card">
+                                    <span class="stat-label">Hypothesis Nodes</span>
+                                    <strong class="stat-val" id="hypNodesVal">0 concepts</strong>
+                                </div>
+                            </div>
+
+                            <!-- Detailed Comparison Table -->
+                            <div class="comparison-table-wrapper">
+                                <table class="comparison-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Thành Phần Đồ Thị</th>
+                                            <th>Reference AMR</th>
+                                            <th>Hypothesis AMR</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>Concept Gốc (Top Concept)</td>
+                                            <td id="refTopConcept">-</td>
+                                            <td id="hypTopConcept">-</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Số Biến (Variables)</td>
+                                            <td id="refVarCount">0</td>
+                                            <td id="hypVarCount">0</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Số Cạnh (Edges / Roles)</td>
+                                            <td id="refEdgeCount">0</td>
+                                            <td id="hypEdgeCount">0</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Số Triples Cấu Trúc</td>
+                                            <td id="refTripleCount">0</td>
+                                            <td id="hypTripleCount">0</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- MAIN TAB 2: Batch Evaluation -->
+        <main class="tab-content" id="batch-eval">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i data-lucide="layers"></i>
+                        <span>Đánh Giá Hàng Loạt Cặp Đồ Thị AMR</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">Tải lên file JSON/CSV chứa danh sách các cặp AMR hoặc dán danh sách cấu trúc để tính toán điểm số hàng loạt.</p>
+                    
+                    <div class="batch-upload-area" id="dropZone">
+                        <i data-lucide="upload-cloud" class="upload-icon"></i>
+                        <p>Kéo và thả file CSV/JSON vào đây hoặc <label for="fileUploadInput" class="upload-link">chọn file từ máy tính</label></p>
+                        <input type="file" id="fileUploadInput" accept=".json,.csv,.txt" class="hidden">
+                    </div>
+
+                    <div class="action-group style-margin">
+                        <button class="btn btn-primary" id="btnRunBatch">
+                            <i data-lucide="play-circle"></i> Chạy Batch Evaluation
+                        </button>
+                    </div>
+
+                    <div class="batch-results-wrapper hidden" id="batchResultsWrapper">
+                        <h3>Kết Quả Batch (<span id="batchCount">0</span> pairs) - Trung Bình Điểm: <span id="batchAvgScore" class="text-cyan">0.0000</span></h3>
+                        <table class="comparison-table mt-3" id="batchTable">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Pair ID</th>
+                                    <th>Điểm RoSE Score</th>
+                                    <th>Trạng Thái</th>
+                                </tr>
+                            </thead>
+                            <tbody id="batchTableBody">
+                                <!-- Dynamic Batch Rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- MAIN TAB 3: Paper Specs -->
+        <main class="tab-content" id="paper-info">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i data-lucide="book-open"></i>
+                        <span>Thông Tin Nghiên Cứu & Thuật Toán RoSE / SEMCAT</span>
+                    </div>
+                </div>
+                <div class="card-body paper-content">
+                    <h2>🧠 Semantic Evaluation Metric Conforming to AMR Theory (SEMCAT / RoSE)</h2>
+                    <p>Dự án này là triển khai chuẩn mực của bài báo nghiên cứu khoa học năm 2026 về Đánh giá Ngữ nghĩa Đồ thị AMR (Abstract Meaning Representation).</p>
+                    
+                    <div class="specs-grid">
+                        <div class="spec-card">
+                            <h3><i data-lucide="cpu"></i> Weisfeiler-Leman (WL) Subgraph Hashing</h3>
+                            <p>Thuật toán Weisfeiler-Leman $N$-step băm đồ thị con để so sánh độ tương đồng cấu trúc và ngữ nghĩa giữa các node và quan hệ role trong đồ thị AMR mà không phụ thuộc vào tên biến ngẫu nhiên.</p>
+                        </div>
+                        <div class="spec-card">
+                            <h3><i data-lucide="git-merge"></i> Graph Standardization (standardizer_rose)</h3>
+                            <p>Chuẩn hóa đồ thị AMR, loại bỏ vai trò wiki không cần thiết, tái cấu trúc các vai trò bị động/chủ động và reification về dạng chuẩn trước khi tính toán băm.</p>
+                        </div>
+                        <div class="spec-card">
+                            <h3><i data-lucide="check-circle-2"></i> Truth-Conditional Semantics</h3>
+                            <p>Đo lường độ tương đồng theo lý thuyết điều kiện đúng (Truth-Conditional), phân biệt chính xác sự tráo đổi vai trò ngữ nghĩa (VD: ARG0 chó vs ARG1 mèo).</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="main-footer">
+            <p>© 2026 SEMCAT / RoSE Project — Built with FastAPI & Vanilla Modern Web Standards.</p>
+        </footer>
+    </div>
+
+    <!-- JS App Logic -->
+    <script src="app.js"></script>
+</body>
+</html>

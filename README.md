@@ -50,76 +50,115 @@ graph TD
 
 ## Getting Started
 
-Để bắt đầu chạy dự án, bạn cần làm theo các bước dưới đây để cài đặt môi trường và các thư viện cần thiết.
+Để bắt đầu chạy dự án, bạn cần làm theo các bước dưới đây để tạo môi trường Conda và cài đặt các thư viện cần thiết.
 
-### Requirements
+### 1. Tạo môi trường Conda
 
-Yêu cầu Python 3.x. Bạn cần cài đặt các thư viện phụ thuộc thông qua `pip`:
+Tạo và kích hoạt môi trường Conda mới (khuyến nghị Python 3.10):
 
 ```bash
-# Cài đặt thư viện cho phần độ đo (metric)
-cd metric
-pip install -r requirements.txt
-cd ..
+# Tạo môi trường Conda
+conda create -n amr_env python=3.10 -y
 
-# Cài đặt thư viện cho phần thí nghiệm (experiment)
+# Kích hoạt môi trường Conda
+conda activate amr_env
+```
+
+### 2. Cài đặt các thư viện phụ thuộc
+
+Cài đặt các thư viện từ `requirements.txt`, cài đặt thêm `anyascii` và nâng cấp `networkx>=3.1`:
+
+```bash
+# Cài đặt thư viện phụ thuộc chính
+pip install -r requirements.txt
+
+# Cài đặt thêm anyascii và nâng cấp networkx
+pip install anyascii
+pip install --upgrade "networkx>=3.1"
+
+# (Nếu chạy thí nghiệm) Cài đặt bổ sung thư viện cho phần experiment
 cd experiment
 pip install -r requirements.txt
+pip install anyascii
+pip install --upgrade "networkx>=3.1"
 cd ..
 ```
 
-## Usage
+## Usage - Hướng dẫn chạy để ra kết quả
 
-Dự án bao gồm 2 phần chính: **Metric** (đo lường độ tương đồng) và **Experiment** (thực hiện các thí nghiệm đánh giá). Dưới đây là hướng dẫn cách chạy từng phần.
+Dự án hỗ trợ nhiều cách chạy tùy thuộc vào nhu cầu sử dụng của bạn:
 
-### 1. Running Metric
+### 1. Tính toán độ đo tương đồng giữa 2 file AMR (RoSE Metric)
 
-Di chuyển vào thư mục `metric`. Bạn có thể sử dụng script `rose.py` để tính toán độ tương đồng giữa các đồ thị AMR.
+Sử dụng script `rose.py` ở thư mục gốc để tính toán độ tương đồng giữa file AMR tham chiếu (`ref.amr`) và file AMR giả thuyết (`hyp.amr`):
 
 ```bash
-cd metric
-
-# Tính toán với tham số N=2 và Tau=0.75
+# Chạy tính toán với tham số khuyến nghị RoSE2-75 (N=2, Tau=0.75)
 python rose.py -r ref.amr -p hyp.amr -n 2 -t 0.75
 
-# Tính toán với tham số N=5 và Tau=0.99
+# Chạy tính toán với tham số khuyến nghị RoSE5-99 (N=5, Tau=0.99)
 python rose.py -r ref.amr -p hyp.amr -n 5 -t 0.99
+
+# Lưu kết quả điểm số từng câu ra file text
+python rose.py -r ref.amr -p hyp.amr -n 5 -t 0.99 -o result.txt
 ```
 
-*Ghi chú các tham số:*
-- `-r`: File chứa các đồ thị AMR tham chiếu (reference).
-- `-p`: File chứa các đồ thị AMR giả thuyết/dự đoán (hypothesis/predicted).
-- `-n`: Số vòng lặp tối đa cho thuật toán WL (Khuyến nghị: 2 hoặc 5).
-- `-t`: Ngưỡng tương đồng (Khuyến nghị: 0.75 hoặc 0.99).
+*Ghi chú tham số:*
+- `-r` / `--reference`: File chứa các đồ thị AMR chuẩn (Reference).
+- `-p` / `--predicted`: File chứa các đồ thị AMR cần so sánh (Hypothesis/Predicted).
+- `-n` / `--num-iterations`: Số vòng lặp WL algorithm (Khuyến nghị: `2` hoặc `5`).
+- `-t` / `--similarity-threshold-tau`: Ngưỡng tương đồng (Khuyến nghị: `0.75` hoặc `0.99`).
+- `-o` / `--output-txt`: File lưu kết quả chi tiết từng phần.
 
-Bạn cũng có thể sử dụng `rose_stdin.py` (hoặc `stdin.py`) để đưa dữ liệu trực tiếp từ Standard Input.
+---
 
-### 2. Running Experiments
+### 2. Chạy nhập dữ liệu AMR trực tiếp từ Terminal (Interactive)
 
-Di chuyển vào thư mục `experiment`. Đây là nơi chứa các mã nguồn để tái tạo lại kết quả thí nghiệm đánh giá trên các tập dữ liệu AMR.
+Để kiểm tra nhanh 2 câu AMR bằng cách dán chuỗi trực tiếp:
 
-Các bước thực hiện chính:
+```bash
+python rose_stdin.py
+```
 
-1. **Chuẩn bị dữ liệu:** Tải tập dữ liệu AMR 2.0 và AMR 3.0 từ LDC.
-2. **Gộp dữ liệu kiểm thử (Test files):**
-   ```bash
-   python concat_dataset.py -i [AMR_test_split_files] -o [output_path]
-   ```
-3. **Tạo dữ liệu tính bền vững (Robustness data):**
-   ```bash
-   PYTHONHASHSEED=1 python create_robustness_data.py -r [AMR_3.0_Train_Split_files] -o [output_path]
-   ```
-4. **Chuẩn bị các độ đo khác để so sánh:**
-   ```bash
-   ./prepare_other_metrics.sh
-   ```
-5. **Chạy đánh giá toàn bộ độ đo:**
-   ```bash
-   python run_all_metric.py -o [OUTPUT_DIR] -c [NUM_CPUS]
-   ```
-   Để chạy nền và lưu danh sách lỗi ra file riêng, dùng lệnh:
-   ```bash
-   python run_all_metric.py -o [OUTPUT_DIR] -c [NUM_CPUS] 2>errors.log
-   ```
+---
 
-*Để biết thêm chi tiết về các chức năng hoặc các cấu hình khác, bạn có thể tham khảo tệp `README.md` nằm trong từng thư mục con tương ứng (`metric/README.md` và `experiment/README.md`).*
+### 3. Tính toán độ đo SEMCAT từ file kết quả CSV
+
+Nếu bạn đã có file CSV điểm của các độ đo (ví dụ: `per-item.csv`), hãy chạy `calc_SEMCAT.py` để tổng hợp kết quả SEMCAT:
+
+```bash
+python calc_SEMCAT.py --in ./result/per-item.csv --out ./result/per-item_SEMCAT.csv --alpha 0.25
+```
+
+---
+
+### 4. Chạy toàn bộ thí nghiệm đánh giá (Experiment Pipeline)
+
+Nếu muốn tái tạo lại toàn bộ kết quả thí nghiệm trên các tập dữ liệu AMR 2.0 / 3.0:
+
+```bash
+cd experiment
+
+# 1. Gộp dữ liệu kiểm thử (Test files)
+python concat_dataset.py -i [AMR_test_files] -o [output_path]
+
+# 2. Tạo dữ liệu đánh giá độ bền vững (Robustness data)
+PYTHONHASHSEED=1 python create_robustness_data.py -r [AMR_3.0_Train_files] -o [output_path]
+
+# 3. Chuẩn bị các độ đo đối chứng
+./prepare_other_metrics.sh
+
+# 4. Chạy đánh giá toàn bộ các độ đo để xuất ra kết quả
+python run_all_metric.py -o ../result -c 4
+```
+
+---
+
+### 5. Chạy giao diện Web App / API
+
+Để khởi chạy giao diện Web tương tác:
+
+```bash
+uvicorn api.index:app --reload
+```
+Truy cập giao diện Web tại địa chỉ: `http://127.0.0.1:8000`
